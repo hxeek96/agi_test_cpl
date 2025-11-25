@@ -33,7 +33,7 @@ CPU Pinned Memory를 활용한 Memory Layer 구현체입니다. 원본 [Memory L
 
 ```bash
 # 저장소 클론
-git clone <repository-url>
+git clone https://github.com/hxeek96/agi_test_cpl.git
 cd memory
 
 # Conda 환경 생성 및 패키지 설치
@@ -62,24 +62,15 @@ python setup/download_tokenizer.py llama3 ./tokenizer \
     --api_key <HUGGINGFACE_TOKEN>
 ```
 
-### 3. 학습 실행
-
-#### 단일 GPU
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m apps.main.train \
-    config=agi_test/test_1/config/zero_copy.yaml
-```
-
+## TEST
+### TEST 1
 #### 실험 스크립트 사용
 ```bash
 bash agi_test/test_1/script/zero_copy_train.sh
 ```
-
-## 설정 가이드
-
 주요 설정 파일: [agi_test/test_1/config/zero_copy.yaml](agi_test/test_1/config/zero_copy.yaml)
 
-### CPU Pinned Memory 관련 설정
+CPU Pinned Memory 관련 설정
 
 ```yaml
 model:
@@ -92,20 +83,19 @@ model:
     mem_k_dim: 512            # Key dimension
 ```
 
+### TEST 2
+#### 실험 스크립트 사용
+```bash
+bash agi_test/test_2/script/eval_zerop_copy.sh
+```
+
+평가 태스크: HellaSwag, PIQA, NQ Open
+
 ### 반드시 수정해야 할 경로
 
 1. `data.root_dir`: 데이터 디렉토리 경로
 2. `data.tokenizer.path`: 토크나이저 경로
 3. `dump_dir`: 체크포인트 저장 경로 (스크립트에서 지정)
-
-## 평가 (Evaluation)
-
-```bash
-# 체크포인트 평가
-python -m apps.main.eval config=agi_test/test_1/config/eval_zero_copy.yaml
-```
-
-평가 태스크: HellaSwag, PIQA, NQ Open
 
 ## 핵심 구현
 
@@ -160,19 +150,4 @@ class ZeroCopy(nn.Module):
 
 ## 원본 논문 및 코드
 
-이 코드는 [Meta Lingua](https://github.com/facebookresearch/lingua)를 기반으로 하며, zero-copy 기능이 추가되었습니다.
-
-## Citation
-
-```
-@misc{memory_layers_scale,
-  author = {Vincent-Pierre Berges, Barlas Oguz, Daniel Haziza, Wen-tau Yih, Luke Zettlemoyer, Gargi Gosh},
-  title = {Memory Layers at Scale},
-  url = {https://github.com/facebookresearch/memory},
-  year = {2024}
-}
-```
-
-## License
-
-CC-BY-NC license
+이 코드는 Meta 의 [Memory layer](https://github.com/facebookresearch/memory/tree/main)를 기반으로 하며, zero-copy 기능이 추가되었습니다.
