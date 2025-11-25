@@ -17,4 +17,4 @@ CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --nnodes=1 -m apps.main.train
     model.productkey_args.mem_n_keys=${n_keys} \
     model.productkey_args.mem_share_values=true \
     dump_dir=${DUMP_DIR}/${n_keys} \
-    steps=200 \
+    steps=100 \
