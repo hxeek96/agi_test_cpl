@@ -16,7 +16,7 @@ optim:
 distributed:
     fsdp_type: no_shard
     compile: false
-    model_dtype: fp16
+    model_dtype: fp32
     matmul_allow_tf32: false
     selective_activation_checkpointing: false
     tp_size: 1
@@ -25,7 +25,7 @@ distributed:
     dp_replicate: 1
 
 model:
-    dim: 1024
+    dim: 128
     n_layers:  24
     n_heads: 16
     rope_theta: 500000.0
@@ -43,12 +43,12 @@ model:
         mem_offload: false
 
 data:
-    root_dir: /storage1/hs/data
+    root_dir: /home/hs/agi_test_cpl/data
     sources:
         fineweb_edu_10bt: 1.0
     batch_size: 2
     prefetch_size: 64
-    seq_len: 4096
+    seq_len: 2024
     n_views: 2
     load_async: true
     tokenizer:
@@ -72,7 +72,7 @@ logging:
 eval:
     generator:
         max_tokens: 4096
-        dtype: fp16
+        dtype: fp32
         temperature: 1.0
         top_p: 0.95
     harness:

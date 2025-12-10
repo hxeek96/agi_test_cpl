@@ -628,26 +628,40 @@ def train(args: TrainArgs):
         logger.info("Training Result Summary")
         logger.info("=" * 50)
 
-        # Calculate total number of Values used
+        # Count actual number of Value embeddings from the model
         if hasattr(args.model, 'productkey_args') and args.model.productkey_args.is_enabled:
-            n_keys = args.model.productkey_args.mem_n_keys
-            if args.model.productkey_args.mem_share_values:
-                total_values = n_keys * n_keys
-                logger.info(f"Product Key Configuration:")
-                logger.info(f"  - Keys per subspace: {n_keys:,}")
-                logger.info(f"  - Total Values (shared): {total_values:,}")
+            # Find all ZeroCopy modules in the model to get actual vector counts
+            zero_copy_modules = []
+            for m in model.modules():
+                if isinstance(m, ZeroCopy):
+                    zero_copy_modules.append(m)
+            
+            if zero_copy_modules:
+                # Get actual vector count from the model
+                # If mem_share_values is True, there should be only one ZeroCopy module
+                # If False, there should be one per Product Key layer
+                if args.model.productkey_args.mem_share_values:
+                    # Shared values: single ZeroCopy module
+                    actual_total_values = zero_copy_modules[0].num_embeddings
+                    logger.info(f"Product Key Configuration:")
+                    logger.info(f"  - Keys per subspace: {args.model.productkey_args.mem_n_keys:,}")
+                    logger.info(f"  - Total Values (shared, from model): {actual_total_values:,}")
+                else:
+                    # Not shared: multiple ZeroCopy modules (one per layer)
+                    actual_total_values = sum(zc.num_embeddings for zc in zero_copy_modules)
+                    n_pk_layers = len(zero_copy_modules)
+                    values_per_layer = zero_copy_modules[0].num_embeddings if zero_copy_modules else 0
+                    logger.info(f"Product Key Configuration:")
+                    logger.info(f"  - Keys per subspace: {args.model.productkey_args.mem_n_keys:,}")
+                    logger.info(f"  - Product Key layers: {n_pk_layers}")
+                    logger.info(f"  - Total Values (per layer, from model): {values_per_layer:,}")
+                    logger.info(f"  - Total Values (all layers, from model): {actual_total_values:,}")
+                
+                logger.info(f"\nTraining was conducted using {actual_total_values:,} Value embeddings.")
+                logger.info(f"(Verified from actual model: {len(zero_copy_modules)} ZeroCopy module(s) found)")
             else:
-                # If not sharing values, each layer has its own values
-                layers = args.model.productkey_args.layers
-                n_pk_layers = len(layers.split(',')) if isinstance(layers, str) else 1
-                total_values = n_keys * n_keys * n_pk_layers
-                logger.info(f"Product Key Configuration:")
-                logger.info(f"  - Keys per subspace: {n_keys:,}")
-                logger.info(f"  - Product Key layers: {n_pk_layers}")
-                logger.info(f"  - Total Values (per layer): {n_keys * n_keys:,}")
-                logger.info(f"  - Total Values (all layers): {total_values:,}")
-
-            logger.info(f"\nTraining was conducted using {total_values:,} Value embeddings.")
+                logger.warning("Product Key enabled but no ZeroCopy modules found in model.")
+                logger.info("Product Key Memory not properly initialized.")
         else:
             logger.info("Product Key Memory not enabled.")
 
@@ -658,44 +672,6 @@ def train(args: TrainArgs):
 
 
 def main():
-    """
-    The command line interface here uses OmegaConf https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#from-command-line-arguments
-    This accepts arguments as a dot list
-    So if the dataclass looks like
-
-    @dataclass
-    class DummyArgs:
-        name: str
-        model: LMTransformerArgsgs
-
-    @dataclass
-    class LMTransformerArgsgs:
-        dim: int
-
-    Then you can pass model.dim=32 to change values in LMTransformerArgsgs
-    or just name=tictac for top level attributes.
-
-    The behavior here is as follows:
-    1. We instantiate TrainArgs with its default values
-    2. We override those default values with the ones in the provided config file
-    3. We override the result with the additional arguments provided through command line
-
-    For example, if the config is the following
-
-    model:
-        dim: 128
-        n_layers: 4
-
-    and you call train.py with train.py model.dim=64
-
-    Then the final TrainArgs will have
-
-    model:
-        dim: 64
-        n_layers: 4
-
-    Plus all the default values in TrainArgs dataclass.
-    """
     cli_args = OmegaConf.from_cli()
     file_cfg = OmegaConf.load(cli_args.config)
     # We remove 'config' attribute from config as the underlying DataClass does not have it

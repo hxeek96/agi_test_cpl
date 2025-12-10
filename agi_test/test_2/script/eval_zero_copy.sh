@@ -3,9 +3,6 @@
 
 set -euo pipefail
 
-BASE_DIR="/home/hs/farnn/memory/experiments"
-HOME_DIR="/home/hs/farnn/memory"
-REMOTE_DIR="/storage1/hs/agi_test"
 CKPT_STEP="0000000100"
 
 # Conda 환경 활성화
@@ -21,10 +18,8 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export PYTORCH_JIT=0
 export TORCH_COMPILE_DISABLE=1
 
-CKPT_DIR="/storage1/hs/agi_test/1024/checkpoints/0000000100"
-EVAL_DUMP_DIR="/storage1/hs/agi_test_eval/zero_copy"
-
-cd "${HOME_DIR}"
+CKPT_DIR="/home/hs/agi_test_cpl/agi_test/test_1/dump/1024/checkpoints/0000000100"
+EVAL_DUMP_DIR="/home/hs/agi_test_cpl/agi_test/test_2/dump/zero_copy"
 
 echo "============================================================"
 echo " Zero-Copy Evaluation"
@@ -34,7 +29,7 @@ echo " Dump Dir   : ${EVAL_DUMP_DIR}"
 echo "============================================================"
 
 CUDA_VISIBLE_DEVICES=0 python -m apps.main.eval \
-    config="/home/hs/farnn/memory/agi_test/test_2/config/eval_zero_copy.yaml" \
+    config="/home/hs/agi_test_cpl/agi_test/test_2/config/eval_zero_copy.yaml" \
     ckpt_dir="${CKPT_DIR}" \
     dump_dir="${EVAL_DUMP_DIR}"
 

@@ -3,7 +3,7 @@ name: eval_zero_copy
 
 generator:
   max_tokens: 4096
-  dtype: fp16
+  dtype: fp32
   max_gen_len: 64    # ← 추가
   # attn_impl: sdpa  # ← 이거 추가
 

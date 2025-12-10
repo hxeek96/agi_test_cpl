@@ -43,12 +43,12 @@ model:
         mem_offload: false
 
 data:
-    root_dir: /storage1/hs/data
+    root_dir: /home/hs/agi_test_cpl/data
     sources:
         fineweb_edu_10bt: 1.0
     batch_size: 2
     prefetch_size: 64
-    seq_len: 4096
+    seq_len: 2024
     n_views: 2
     load_async: true
     tokenizer:

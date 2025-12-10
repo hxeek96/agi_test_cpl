@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import time
 
-sys.path.append('/home/hs/farnn/memory/host_dma/src/py')
+sys.path.append('/home/hs/agi_test_cpl/host_dma/src/py')
 from dma_binding import DMA
 
 

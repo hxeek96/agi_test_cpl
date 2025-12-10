@@ -13,10 +13,16 @@ class ZeroCopy(nn.Module):
       self.num_embeddings = num_embeddings
       self.embedding_dim  = embedding_dim
 
-      self.weight = nn.Parameter( # PyTorch가 학습 가능한 파라미터라고 인식
-        torch.empty(num_embeddings, embedding_dim, device="cpu").pin_memory(),
-        requires_grad=True
-      )
+      # CPU 메모리에 할당 (meta device 컨텍스트에서도 안전하게 동작)
+      weight = torch.empty(num_embeddings, embedding_dim, device="cpu")
+      if torch.cuda.is_available() and not weight.is_meta:
+          try:
+              weight = weight.pin_memory()
+          except RuntimeError:
+              # CUDA 컨텍스트가 아직 준비되지 않았거나 메모리 부족 시 pin_memory 생략
+              pass
+      
+      self.weight = nn.Parameter(weight, requires_grad=True)
     
     def reset_parameters(self) -> None:
        nn.init.normal_(self.weight, mean=0, std=self.embedding_dim ** -0.5) # 표준편차가 embedding_dim의 제곱근의 역수인 정규분포로 초기화
@@ -32,8 +38,8 @@ class ZeroCopy(nn.Module):
       3. Transfer to GPU
       4. GPU에서 원본 Shape 복원 + Weighted Sum
       """
-      original_shape  = indices.shape                 #원래 shape를 저장
-      flat_indices    = indices.flatten()             # 중복을 찾으려면, 1-Dimensiom으로 flat 필요
+      original_shape  = indices.shape                 
+      flat_indices    = indices.flatten()             
       unique_indices, inverse_indices = torch.unique(
         flat_indices,
         return_inverse=True
@@ -46,8 +52,8 @@ class ZeroCopy(nn.Module):
       else:
           unique_emb_compressed = unique_emb_cpu
       unique_emb_gpu = unique_emb_compressed.to(
-        device=indices.device,                        # indices가 존재하는 GPU
-        non_blocking=True                             # 비동기 전송?
+        device=indices.device,                        
+        non_blocking=True                             
       )
       # ========== Step 4: Recover shape + Weighted Sum ==========
       expanded_emb = unique_emb_gpu[inverse_indices]
